@@ -10,26 +10,26 @@ RUN apt-get update && apt-get install -y openssl sqlite3
 # Install all node_modules, including dev dependencies
 FROM base as deps
 
-WORKDIR /myapp
+WORKDIR /translaite
 
-ADD package.json package-lock.json .npmrc ./
+ADD package.json .npmrc ./
 RUN npm install --include=dev
 
 # Setup production node_modules
 FROM base as production-deps
 
-WORKDIR /myapp
+WORKDIR /translaite
 
-COPY --from=deps /myapp/node_modules /myapp/node_modules
-ADD package.json package-lock.json .npmrc ./
+COPY --from=deps /translaite/node_modules /translaite/node_modules
+ADD package.json .npmrc ./
 RUN npm prune --omit=dev
 
 # Build the app
 FROM base as build
 
-WORKDIR /myapp
+WORKDIR /translaite
 
-COPY --from=deps /myapp/node_modules /myapp/node_modules
+COPY --from=deps /translaite/node_modules /translaite/node_modules
 
 ADD prisma .
 RUN npx prisma generate
@@ -43,19 +43,25 @@ FROM base
 ENV DATABASE_URL=file:/data/sqlite.db
 ENV PORT="8080"
 ENV NODE_ENV="production"
+ENV SESSION_SECRET="${SESSION_SECRET:-8d17b3e56ceaf651e8763db9a80fc7f6}"
+ENV ALLOW_USER_SIGNUP=0
 
 # add shortcut for connecting to database CLI
 RUN echo "#!/bin/sh\nset -x\nsqlite3 \$DATABASE_URL" > /usr/local/bin/database-cli && chmod +x /usr/local/bin/database-cli
 
-WORKDIR /myapp
+WORKDIR /translaite
 
-COPY --from=production-deps /myapp/node_modules /myapp/node_modules
-COPY --from=build /myapp/node_modules/.prisma /myapp/node_modules/.prisma
+COPY --from=production-deps /translaite/node_modules /translaite/node_modules
+COPY --from=build /translaite/node_modules/.prisma /translaite/node_modules/.prisma
 
-COPY --from=build /myapp/build /myapp/build
-COPY --from=build /myapp/public /myapp/public
-COPY --from=build /myapp/package.json /myapp/package.json
-COPY --from=build /myapp/start.sh /myapp/start.sh
-COPY --from=build /myapp/prisma /myapp/prisma
+COPY --from=build /translaite/build /translaite/build
+COPY --from=build /translaite/public /translaite/public
+COPY --from=build /translaite/package.json /translaite/package.json
+COPY --from=build /translaite/start.sh /translaite/start.sh
+COPY --from=build /translaite/prisma /translaite/prisma
+
+RUN chmod +x start.sh
 
 ENTRYPOINT [ "./start.sh" ]
+
+EXPOSE 8080
