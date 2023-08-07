@@ -47,7 +47,7 @@ export default function TranslationDetailsPage() {
       <Form method="post">
         <button
           type="submit"
-          className="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600 focus:bg-blue-400"
+          className="rounded bg-red-500 px-4 py-2 text-white hover:bg-red-600 focus:bg-red-400"
         >
           Delete
         </button>
