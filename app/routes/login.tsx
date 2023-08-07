@@ -1,16 +1,29 @@
 import type { ActionArgs, LoaderArgs, V2_MetaFunction } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
-import { Form, Link, useActionData, useSearchParams } from "@remix-run/react";
+import {
+  Form,
+  Link,
+  useActionData,
+  useLoaderData,
+  useSearchParams,
+} from "@remix-run/react";
 import { useEffect, useRef } from "react";
+import { isSignupAllowed } from "~/config.server";
 
-import { verifyLogin } from "~/models/user.server";
+import { countUsers, verifyLogin } from "~/models/user.server";
 import { createUserSession, getUserId } from "~/session.server";
 import { safeRedirect, validateEmail } from "~/utils";
 
 export const loader = async ({ request }: LoaderArgs) => {
   const userId = await getUserId(request);
   if (userId) return redirect("/");
-  return json({});
+
+  const isFirstUser = (await countUsers()) === 0;
+  if (isFirstUser) return redirect("/signup");
+
+  return json({
+    ALLOW_USER_SIGNUP: await isSignupAllowed(),
+  });
 };
 
 export const action = async ({ request }: ActionArgs) => {
@@ -64,6 +77,7 @@ export default function LoginPage() {
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") || "/t";
   const actionData = useActionData<typeof action>();
+  const loaderData = useLoaderData<typeof loader>();
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
 
@@ -140,7 +154,7 @@ export default function LoginPage() {
           >
             Log in
           </button>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col items-center justify-between md:flex-row">
             <div className="flex items-center">
               <input
                 id="remember"
@@ -155,18 +169,20 @@ export default function LoginPage() {
                 Remember me
               </label>
             </div>
-            <div className="text-center text-sm text-gray-500">
-              Don't have an account?{" "}
-              <Link
-                className="text-blue-500 underline"
-                to={{
-                  pathname: "/join",
-                  search: searchParams.toString(),
-                }}
-              >
-                Sign up
-              </Link>
-            </div>
+            {!!loaderData?.ALLOW_USER_SIGNUP && (
+              <div className="mt-8 text-center text-sm text-gray-500 md:mt-0">
+                Don't have an account?{" "}
+                <Link
+                  className="text-blue-500 underline"
+                  to={{
+                    pathname: "/join",
+                    search: searchParams.toString(),
+                  }}
+                >
+                  Sign up
+                </Link>
+              </div>
+            )}
           </div>
         </Form>
       </div>

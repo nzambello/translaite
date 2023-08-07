@@ -1,16 +1,30 @@
 import type { ActionArgs, LoaderArgs, V2_MetaFunction } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
-import { Form, Link, useActionData, useSearchParams } from "@remix-run/react";
+import {
+  Form,
+  Link,
+  useActionData,
+  useLoaderData,
+  useSearchParams,
+} from "@remix-run/react";
 import { useEffect, useRef } from "react";
 
-import { createUser, getUserByEmail } from "~/models/user.server";
+import { createUser, getUserByEmail, countUsers } from "~/models/user.server";
 import { createUserSession, getUserId } from "~/session.server";
 import { safeRedirect, validateEmail } from "~/utils";
+import { isSignupAllowed } from "~/config.server";
 
 export const loader = async ({ request }: LoaderArgs) => {
   const userId = await getUserId(request);
   if (userId) return redirect("/");
-  return json({});
+
+  const isFirstUser = (await countUsers()) === 0;
+
+  if (!(await isSignupAllowed())) {
+    return redirect("/login");
+  }
+
+  return json({ isFirstUser });
 };
 
 export const action = async ({ request }: ActionArgs) => {
@@ -18,6 +32,21 @@ export const action = async ({ request }: ActionArgs) => {
   const email = formData.get("email");
   const password = formData.get("password");
   const redirectTo = safeRedirect(formData.get("redirectTo"), "/");
+
+  const isFirstUser = (await countUsers()) === 0;
+
+  if (!isSignupAllowed() && !isFirstUser) {
+    return json(
+      {
+        errors: {
+          email: "User signup is disabled",
+          password: null,
+          confirmPassword: null,
+        },
+      },
+      { status: 418 }
+    );
+  }
 
   if (!validateEmail(email)) {
     return json(
@@ -69,6 +98,7 @@ export default function Join() {
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") ?? undefined;
   const actionData = useActionData<typeof action>();
+  const loaderData = useLoaderData<typeof loader>();
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
 
@@ -145,20 +175,22 @@ export default function Join() {
           >
             Create Account
           </button>
-          <div className="flex items-center justify-center">
-            <div className="text-center text-sm text-gray-500">
-              Already have an account?{" "}
-              <Link
-                className="text-blue-500 underline"
-                to={{
-                  pathname: "/login",
-                  search: searchParams.toString(),
-                }}
-              >
-                Log in
-              </Link>
+          {!loaderData.isFirstUser && (
+            <div className="flex items-center justify-center">
+              <div className="text-center text-sm text-gray-500">
+                Already have an account?{" "}
+                <Link
+                  className="text-blue-500 underline"
+                  to={{
+                    pathname: "/login",
+                    search: searchParams.toString(),
+                  }}
+                >
+                  Log in
+                </Link>
+              </div>
             </div>
-          </div>
+          )}
         </Form>
       </div>
     </div>
