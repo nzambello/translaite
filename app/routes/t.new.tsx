@@ -3,45 +3,47 @@ import { json, redirect } from "@remix-run/node";
 import { Form, useActionData } from "@remix-run/react";
 import { useEffect, useRef } from "react";
 
-import { createNote } from "~/models/note.server";
+import { createTranslation } from "~/models/translation.server";
 import { requireUserId } from "~/session.server";
 
 export const action = async ({ request }: ActionArgs) => {
   const userId = await requireUserId(request);
 
   const formData = await request.formData();
-  const title = formData.get("title");
-  const body = formData.get("body");
+  const lang = formData.get("lang");
+  const text = formData.get("text");
 
-  if (typeof title !== "string" || title.length === 0) {
+  if (typeof lang !== "string" || lang.length === 0) {
     return json(
-      { errors: { body: null, title: "Title is required" } },
+      { errors: { text: null, lang: "Lang is required" } },
       { status: 400 }
     );
   }
 
-  if (typeof body !== "string" || body.length === 0) {
+  if (typeof text !== "string" || text.length === 0) {
     return json(
-      { errors: { body: "Body is required", title: null } },
+      { errors: { text: "Text is required", lang: null } },
       { status: 400 }
     );
   }
 
-  const note = await createNote({ body, title, userId });
+  const result = "test";
 
-  return redirect(`/notes/${note.id}`);
+  const t = await createTranslation({ lang, text, result, userId });
+
+  return redirect(`/t/${t.id}`);
 };
 
-export default function NewNotePage() {
+export default function NewTranslationPage() {
   const actionData = useActionData<typeof action>();
-  const titleRef = useRef<HTMLInputElement>(null);
-  const bodyRef = useRef<HTMLTextAreaElement>(null);
+  const langRef = useRef<HTMLInputElement>(null);
+  const textRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    if (actionData?.errors?.title) {
-      titleRef.current?.focus();
-    } else if (actionData?.errors?.body) {
-      bodyRef.current?.focus();
+    if (actionData?.errors?.lang) {
+      langRef.current?.focus();
+    } else if (actionData?.errors?.text) {
+      textRef.current?.focus();
     }
   }, [actionData]);
 
@@ -57,41 +59,41 @@ export default function NewNotePage() {
     >
       <div>
         <label className="flex w-full flex-col gap-1">
-          <span>Title: </span>
+          <span>Translate to: </span>
           <input
-            ref={titleRef}
-            name="title"
+            ref={langRef}
+            name="lang"
             className="flex-1 rounded-md border-2 border-blue-500 px-3 text-lg leading-loose"
-            aria-invalid={actionData?.errors?.title ? true : undefined}
+            aria-invalid={actionData?.errors?.lang ? true : undefined}
             aria-errormessage={
-              actionData?.errors?.title ? "title-error" : undefined
+              actionData?.errors?.lang ? "lang-error" : undefined
             }
           />
         </label>
-        {actionData?.errors?.title ? (
-          <div className="pt-1 text-red-700" id="title-error">
-            {actionData.errors.title}
+        {actionData?.errors?.lang ? (
+          <div className="pt-1 text-red-700" id="lang-error">
+            {actionData.errors.lang}
           </div>
         ) : null}
       </div>
 
       <div>
         <label className="flex w-full flex-col gap-1">
-          <span>Body: </span>
+          <span>Text: </span>
           <textarea
-            ref={bodyRef}
-            name="body"
+            ref={textRef}
+            name="text"
             rows={8}
             className="w-full flex-1 rounded-md border-2 border-blue-500 px-3 py-2 text-lg leading-6"
-            aria-invalid={actionData?.errors?.body ? true : undefined}
+            aria-invalid={actionData?.errors?.text ? true : undefined}
             aria-errormessage={
-              actionData?.errors?.body ? "body-error" : undefined
+              actionData?.errors?.text ? "text-error" : undefined
             }
           />
         </label>
-        {actionData?.errors?.body ? (
-          <div className="pt-1 text-red-700" id="body-error">
-            {actionData.errors.body}
+        {actionData?.errors?.text ? (
+          <div className="pt-1 text-red-700" id="text-error">
+            {actionData.errors.text}
           </div>
         ) : null}
       </div>
@@ -101,7 +103,7 @@ export default function NewNotePage() {
           type="submit"
           className="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600 focus:bg-blue-400"
         >
-          Save
+          Translate
         </button>
       </div>
     </Form>

@@ -28,6 +28,34 @@ export async function createUser(email: User["email"], password: string) {
   });
 }
 
+export async function updateUser(
+  email: User["email"],
+  data: {
+    openAIKey?: User["openAIKey"];
+    password?: string;
+  }
+) {
+  let userData: { [key: string]: any } = {};
+  if (data.openAIKey) {
+    userData.openAIKey = data.openAIKey;
+  }
+  if (data.password) {
+    const hashedPassword = await bcrypt.hash(data.password, 10);
+    userData.password = {
+      create: {
+        hash: hashedPassword,
+      },
+    };
+  }
+
+  if (Object.values(userData).length === 0) return;
+
+  return prisma.user.update({
+    where: { email },
+    data: userData,
+  });
+}
+
 export async function deleteUserByEmail(email: User["email"]) {
   return prisma.user.delete({ where: { email } });
 }

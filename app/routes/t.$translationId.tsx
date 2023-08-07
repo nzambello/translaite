@@ -8,37 +8,42 @@ import {
 } from "@remix-run/react";
 import invariant from "tiny-invariant";
 
-import { deleteNote, getNote } from "~/models/note.server";
+import { deleteTranslation, getTranslation } from "~/models/translation.server";
 import { requireUserId } from "~/session.server";
 
 export const loader = async ({ params, request }: LoaderArgs) => {
   const userId = await requireUserId(request);
-  invariant(params.noteId, "noteId not found");
+  invariant(params.translationId, "translationId not found");
 
-  const note = await getNote({ id: params.noteId, userId });
-  if (!note) {
+  const translation = await getTranslation({
+    id: params.translationId,
+    userId,
+  });
+  if (!translation) {
     throw new Response("Not Found", { status: 404 });
   }
-  return json({ note });
+  return json({ translation });
 };
 
 export const action = async ({ params, request }: ActionArgs) => {
   const userId = await requireUserId(request);
-  invariant(params.noteId, "noteId not found");
+  invariant(params.translationId, "translationId not found");
 
-  await deleteNote({ id: params.noteId, userId });
+  await deleteTranslation({ id: params.translationId, userId });
 
-  return redirect("/notes");
+  return redirect("/t");
 };
 
-export default function NoteDetailsPage() {
+export default function TranslationDetailsPage() {
   const data = useLoaderData<typeof loader>();
 
   return (
     <div>
-      <h3 className="text-2xl font-bold">{data.note.title}</h3>
-      <p className="py-6">{data.note.body}</p>
+      <p className="text-xl font-bold">To: {data.translation.lang}</p>
+      <p className="py-6">{data.translation.text}</p>
       <hr className="my-4" />
+      <p>Result:</p>
+      <p className="py-6">{data.translation.result}</p>
       <Form method="post">
         <button
           type="submit"
@@ -63,7 +68,7 @@ export function ErrorBoundary() {
   }
 
   if (error.status === 404) {
-    return <div>Note not found</div>;
+    return <div>Translation not found</div>;
   }
 
   return <div>An unexpected error occurred: {error.statusText}</div>;
