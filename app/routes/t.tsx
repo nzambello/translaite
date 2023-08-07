@@ -1,10 +1,10 @@
 import type { LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { Form, Link, NavLink, Outlet, useLoaderData } from "@remix-run/react";
+import { useEffect, useState } from "react";
 
 import { getTranslationsListItems } from "~/models/translation.server";
 import { requireUserId } from "~/session.server";
-import { useUser } from "~/utils";
 
 export const loader = async ({ request }: LoaderArgs) => {
   const userId = await requireUserId(request);
@@ -12,15 +12,32 @@ export const loader = async ({ request }: LoaderArgs) => {
   return json({ translations });
 };
 
-export default function NotesPage() {
+export default function TranslationsPage() {
   const data = useLoaderData<typeof loader>();
-  const user = useUser();
+  const [expanded, _setExpanded] = useState(false);
+  const setExpanded: typeof _setExpanded = (value) => {
+    const isMobile = window.matchMedia("(max-width: 640px)").matches;
+
+    if (isMobile) {
+      _setExpanded(value);
+    } else {
+      _setExpanded(true);
+    }
+  };
+
+  useEffect(() => {
+    const isMobile = window.matchMedia("(max-width: 640px)").matches;
+
+    if (!isMobile) {
+      _setExpanded(true);
+    }
+  }, []);
 
   return (
     <div className="flex h-full min-h-screen flex-col">
       <header className="flex items-center justify-between bg-slate-800 p-4 text-white">
-        <h1 className="mr-auto text-3xl font-bold">
-          <Link to=".">Translations</Link>
+        <h1 className="mr-auto text-3xl font-bold max-[375px]:hidden">
+          <Link to=".">TranslAIte</Link>
         </h1>
         <div className="ml-auto flex items-center">
           <Link
@@ -41,34 +58,65 @@ export default function NotesPage() {
       </header>
 
       <main className="flex h-full bg-white">
-        <div className="h-full w-80 border-r bg-gray-50">
-          <Link to="new" className="block p-4 text-xl text-blue-500">
-            + New Translation
+        <aside
+          className="fixed left-0 z-10 h-full max-w-0 border-r bg-gray-50  sm:static sm:w-80"
+          style={{
+            maxWidth: expanded ? "100%" : "3rem",
+          }}
+        >
+          <Link
+            to="new"
+            className="m-2 block rounded bg-blue-500 px-8 py-4 text-xl text-white hover:bg-blue-600 active:bg-blue-700"
+            style={{
+              padding: expanded ? "0.75rem 1.5rem" : "0.5rem",
+            }}
+            onClick={() => setExpanded(false)}
+          >
+            {expanded ? "+ New Translation" : "+"}
           </Link>
 
           <hr />
 
-          {data.translations.length === 0 ? (
-            <p className="p-4">No translations yet</p>
-          ) : (
-            <ol>
-              {data.translations.map((t) => (
+          <ul className={expanded ? "block" : "hidden"}>
+            {data.translations.length === 0 ? (
+              <li>
+                <p className="p-4">No translations yet</p>
+              </li>
+            ) : (
+              data.translations.map((t) => (
                 <li key={t.id}>
                   <NavLink
                     className={({ isActive }) =>
                       `block border-b p-4 text-xl ${isActive ? "bg-white" : ""}`
                     }
                     to={t.id}
+                    onClick={() => setExpanded(false)}
                   >
                     [{t.lang}] {t.text}
                   </NavLink>
                 </li>
-              ))}
-            </ol>
-          )}
-        </div>
+              ))
+            )}
+          </ul>
 
-        <div className="flex-1 p-6">
+          <div className="">
+            <button
+              className="block p-4 text-xl text-blue-500 "
+              onClick={() => {
+                _setExpanded(!expanded);
+              }}
+            >
+              {expanded ? "<<" : ">>"}
+            </button>
+          </div>
+        </aside>
+
+        <div
+          className="max-w-full flex-1 p-6"
+          style={{
+            paddingLeft: expanded ? "1.5rem" : "4.5rem",
+          }}
+        >
           <Outlet />
         </div>
       </main>

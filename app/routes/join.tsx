@@ -63,7 +63,7 @@ export const action = async ({ request }: ActionArgs) => {
   });
 };
 
-export const meta: V2_MetaFunction = () => [{ title: "Sign Up" }];
+export const meta: V2_MetaFunction = () => [{ title: "Sign Up | TranslAIte" }];
 
 export default function Join() {
   const [searchParams] = useSearchParams();
