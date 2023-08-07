@@ -14,8 +14,10 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  password Password?
-  notes    Note[]
+  password     Password?
+  translations Translation[]
+
+  openAIKey String?
 }
 
 model Password {
@@ -25,10 +27,11 @@ model Password {
   userId String @unique
 }
 
-model Note {
-  id    String @id @default(cuid())
-  title String
-  body  String
+model Translation {
+  id     String @id @default(cuid())
+  lang   String
+  text   String
+  result String
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
