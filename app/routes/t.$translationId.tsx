@@ -42,7 +42,9 @@ export default function TranslationDetailsPage() {
       <p className="text-xl font-bold">To: {data.translation.lang}</p>
       <p className="py-6">{data.translation.text}</p>
       <hr className="my-4" />
-      <p>Result:</p>
+      <p>
+        <strong>Result:</strong>
+      </p>
       <p className="py-6">{data.translation.result}</p>
       <Form method="post">
         <button

@@ -1,6 +1,12 @@
 import type { ActionArgs, LoaderArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
-import { Form, Link, useActionData, useLoaderData } from "@remix-run/react";
+import {
+  Form,
+  Link,
+  useActionData,
+  useLoaderData,
+  useNavigation,
+} from "@remix-run/react";
 import { useEffect, useRef } from "react";
 
 import { createTranslation } from "~/models/translation.server";
@@ -116,6 +122,7 @@ export default function NewTranslationPage() {
   const loaderData = useLoaderData<typeof loader>();
   const langRef = useRef<HTMLInputElement>(null);
   const textRef = useRef<HTMLTextAreaElement>(null);
+  const navigation = useNavigation();
 
   useEffect(() => {
     if (actionData?.errors?.lang) {
@@ -141,7 +148,11 @@ export default function NewTranslationPage() {
           <input
             ref={langRef}
             name="lang"
-            disabled={loaderData?.userHasOpenAIKey === false}
+            required
+            disabled={
+              loaderData?.userHasOpenAIKey === false ||
+              navigation.state === "submitting"
+            }
             className="flex-1 rounded-md border-2 border-blue-500 px-3 text-lg leading-loose"
             aria-invalid={actionData?.errors?.lang ? true : undefined}
             aria-errormessage={
@@ -162,8 +173,12 @@ export default function NewTranslationPage() {
           <textarea
             ref={textRef}
             name="text"
+            required
             rows={8}
-            disabled={loaderData?.userHasOpenAIKey === false}
+            disabled={
+              loaderData?.userHasOpenAIKey === false ||
+              navigation.state === "submitting"
+            }
             className="w-full flex-1 rounded-md border-2 border-blue-500 px-3 py-2 text-lg leading-6"
             aria-invalid={actionData?.errors?.text ? true : undefined}
             aria-errormessage={
@@ -181,9 +196,34 @@ export default function NewTranslationPage() {
       <div className="text-right">
         <button
           type="submit"
-          disabled={loaderData?.userHasOpenAIKey === false}
+          disabled={
+            loaderData?.userHasOpenAIKey === false ||
+            navigation.state === "submitting"
+          }
           className="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600 focus:bg-blue-400"
         >
+          {navigation.state === "submitting" && (
+            <svg
+              className="mr-2 inline-block h-4 w-4 animate-spin text-white"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2
+                5.291A7.962 7.962 0 014 12H0c0 3.042
+                1.135 5.824 3 7.938l3-2.647z"
+              />
+            </svg>
+          )}
           Translate
         </button>
       </div>
