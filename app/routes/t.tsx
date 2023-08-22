@@ -87,12 +87,14 @@ export default function TranslationsPage() {
                 <li key={t.id}>
                   <NavLink
                     className={({ isActive }) =>
-                      `block border-b p-4 text-xl ${isActive ? "bg-white" : ""}`
+                      `block border-b p-4 text-sm ${isActive ? "bg-white" : ""}`
                     }
                     to={t.id}
                     onClick={() => setExpanded(false)}
                   >
-                    [{t.lang}] {t.text}
+                    <p className="line-clamp-3">
+                      [{t.lang}] {t.text}
+                    </p>
                   </NavLink>
                 </li>
               ))
