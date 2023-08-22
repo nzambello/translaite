@@ -77,7 +77,14 @@ export default function TranslationsPage() {
 
           <hr />
 
-          <ul className={expanded ? "block" : "hidden"}>
+          <ul
+            className={`max-h-full overflow-scroll ${
+              expanded ? "block" : "hidden"
+            }`}
+            style={{
+              maxHeight: "calc(100vh - 68px - 1px - 60px - 72px)",
+            }}
+          >
             {data.translations.length === 0 ? (
               <li>
                 <p className="p-4">No translations yet</p>
